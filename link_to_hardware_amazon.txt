@@ -4,6 +4,5 @@ https://www.amazon.com/MakerFocus-Serial-Display-Module-Arduino/dp/B076WXR8N9/re
 heart rate monitor
 https://www.amazon.com/MAX30102-Detection-Concentration-Arduino-Ultra-Low/dp/B07V5LF5BP/ref=sr_1_61?crid=UJF63DDVFQUC&keywords=heart+rate+monitor+arduino&qid=1697344213&sprefix=heart+rate+monitor+arduino%2Caps%2C173&sr=8-61
 
-
 accelerometer
 https://www.amazon.com/SunFounder-Digital-Accelerometer-ADXL345-Raspberry/dp/B0151FIBZO/ref=sr_1_19?crid=1ZMCWJV6DIZD3&keywords=accelerometer+arduino&qid=1697344654&sprefix=accelerometer+arduin%2Caps%2C162&sr=8-19
