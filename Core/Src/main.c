@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -42,6 +43,41 @@
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef huart2;
 
+/* Definitions for default_task */
+osThreadId_t default_taskHandle;
+const osThreadAttr_t default_task_attributes = {
+  .name = "default_task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
+/* Definitions for wright_to_displ */
+osThreadId_t wright_to_displHandle;
+const osThreadAttr_t wright_to_displ_attributes = {
+  .name = "wright_to_displ",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for read_heart_rate */
+osThreadId_t read_heart_rateHandle;
+const osThreadAttr_t read_heart_rate_attributes = {
+  .name = "read_heart_rate",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for read_acceloroma */
+osThreadId_t read_acceloromaHandle;
+const osThreadAttr_t read_acceloroma_attributes = {
+  .name = "read_acceloroma",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for date_and_time_t */
+osThreadId_t date_and_time_tHandle;
+const osThreadAttr_t date_and_time_t_attributes = {
+  .name = "date_and_time_t",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -50,7 +86,14 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
+void start_default_task(void *argument);
+void start_wright_to_display_task(void *argument);
+void start_read_heart_rate_task(void *argument);
+void start_read_acceloromater_task(void *argument);
+void start_date_and_time_task(void *argument);
+
 /* USER CODE BEGIN PFP */
+/*************  Task-Creation-Part-A ******************/
 
 /* USER CODE END PFP */
 
@@ -92,6 +135,57 @@ int main(void)
 
   /* USER CODE END 2 */
 
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of default_task */
+  default_taskHandle = osThreadNew(start_default_task, NULL, &default_task_attributes);
+
+  /* creation of wright_to_displ */
+  wright_to_displHandle = osThreadNew(start_wright_to_display_task, NULL, &wright_to_displ_attributes);
+
+  /* creation of read_heart_rate */
+  read_heart_rateHandle = osThreadNew(start_read_heart_rate_task, NULL, &read_heart_rate_attributes);
+
+  /* creation of read_acceloroma */
+  read_acceloromaHandle = osThreadNew(start_read_acceloromater_task, NULL, &read_acceloroma_attributes);
+
+  /* creation of date_and_time_t */
+  date_and_time_tHandle = osThreadNew(start_date_and_time_task, NULL, &date_and_time_t_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /*************  Task-Creation-Part-C *****************/
+
+
+
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -225,8 +319,121 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/************  Task-Creation-Part-B *****************/
+
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_start_default_task */
+/**
+  * @brief  Function implementing the default_task thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_start_default_task */
+void start_default_task(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_start_wright_to_display_task */
+/**
+* @brief Function implementing the wright_to_displ thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_wright_to_display_task */
+void start_wright_to_display_task(void *argument)
+{
+  /* USER CODE BEGIN start_wright_to_display_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END start_wright_to_display_task */
+}
+
+/* USER CODE BEGIN Header_start_read_heart_rate_task */
+/**
+* @brief Function implementing the read_heart_rate thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_read_heart_rate_task */
+void start_read_heart_rate_task(void *argument)
+{
+  /* USER CODE BEGIN start_read_heart_rate_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END start_read_heart_rate_task */
+}
+
+/* USER CODE BEGIN Header_start_read_acceloromater_task */
+/**
+* @brief Function implementing the read_acceloroma thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_read_acceloromater_task */
+void start_read_acceloromater_task(void *argument)
+{
+  /* USER CODE BEGIN start_read_acceloromater_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END start_read_acceloromater_task */
+}
+
+/* USER CODE BEGIN Header_start_date_and_time_task */
+/**
+* @brief Function implementing the date_and_time_t thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_start_date_and_time_task */
+void start_date_and_time_task(void *argument)
+{
+  /* USER CODE BEGIN start_date_and_time_task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END start_date_and_time_task */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
