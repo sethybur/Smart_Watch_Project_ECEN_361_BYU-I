@@ -24,12 +24,18 @@
 #include <stdio.h>
 #include <string.h>
 #include "ssd1306.h"
-//#include "ssd1306.c"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+struct userDataStruct {
+	int hour;
+	int min;
+	char am;
+	int bpm;
+	int bo2;
+	int steps;
+};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -58,12 +64,18 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
+
+void updateScreenTask(void *argument);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// REMOVE AND REPLACE WITH REAL DEAL
+struct userDataStruct testUserData = {12, 36, 0x1, 76, 99, 123456};
+
 
 /* USER CODE END 0 */
 
@@ -74,7 +86,6 @@ static void MX_USART2_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -101,34 +112,23 @@ int main(void)
   /* USER CODE BEGIN 2 */
   ssd1306_Init();
   ssd1306_Fill(Black);
-  //ssd1306_UpdateScreen();
   ssd1306_SetCursor(0,0);
-  ssd1306_WriteString("     hh-mm PM     ", Font_7x10 ,White);
-  ssd1306_SetCursor(0,20);
-  ssd1306_WriteString("BPM: ---", Font_7x10, White);
-  ssd1306_SetCursor(0,30);
-  ssd1306_WriteString("BO2: ---%", Font_7x10, White);
-  ssd1306_SetCursor(0,40);
-  ssd1306_WriteString("Steps: -----", Font_7x10, White);
+  ssd1306_WriteString("BOOTING", Font_7x10 ,White);
+  ssd1306_UpdateScreen();
+
+
+
 
   /* USER CODE END 2 */
-  ssd1306_UpdateScreen();
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /*
-	  HAL_Delay(1500);
-	  ssd1306_Fill(Black);
 
-	  ssd1306_UpdateScreen();
-	  HAL_Delay(1500);
-	  ssd1306_Fill(White);
-	  ssd1306_UpdateScreen();
-	  //printf("Hello World");
-	  //printf("\r\n");'
-	   *
-	   * 	   */
+	  HAL_Delay(2000);
+	  updateScreenTask((void*) &testUserData);
+
 
     /* USER CODE END WHILE */
 
@@ -343,7 +343,34 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void updateScreenTask(void *arg){
 
+  struct userDataStruct userData = testUserData;
+
+  ssd1306_Fill(Black);
+  ssd1306_SetCursor(0,0);
+
+  char temp [4][19];
+  //"     hh-mm PM     ";
+  char *ampm = ((userData.am) ? "AM" : "PM");
+  snprintf(temp[0], 19, "     %2i-%2i %.2s     " ,userData.hour ,userData.min ,ampm);
+  ssd1306_WriteString(temp[0], Font_7x10 ,White);
+
+  ssd1306_SetCursor(0,20);
+  snprintf(temp[1], 19, "BPM: %i", userData.bpm);
+  ssd1306_WriteString(temp[1], Font_7x10, White);
+
+  ssd1306_SetCursor(0,30);
+  snprintf(temp[2], 19, "BO2: %i%%", userData.bo2);
+  ssd1306_WriteString(temp[2], Font_7x10, White);
+
+
+  ssd1306_SetCursor(0,40);
+  snprintf(temp[3], 19, "Steps: %i", userData.steps);
+  ssd1306_WriteString(temp[3], Font_7x10, White);
+  ssd1306_UpdateScreen();
+
+}
 int __io_putchar(int ch){
 	HAL_UART_Transmit(&huart1, (uint8_t *) &ch, 1, HAL_MAX_DELAY);
 	return ch;
