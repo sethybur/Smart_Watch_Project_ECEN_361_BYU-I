@@ -26,7 +26,6 @@ Core/Src \
 Core/Startup \
 Drivers/OLED \
 Drivers/STM32L4xx_HAL_Driver/Src \
-Drivers/STM32_MAX30102_HAL \
 Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 \
 Middlewares/Third_Party/FreeRTOS/Source \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F \

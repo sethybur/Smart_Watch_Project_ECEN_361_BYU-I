@@ -12,6 +12,8 @@
 #include <_ansi.h>
 
 _BEGIN_STD_C
+//#include "stm3214xx_hal_i2c.h"
+
 
 #include "ssd1306_conf.h"
 
