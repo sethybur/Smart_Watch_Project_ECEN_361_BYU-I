@@ -23,7 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ssd1306.h"
+//#include "ssd1306.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -102,6 +102,9 @@ const osMutexAttr_t mutex_table_data_attributes = {
 //char[] for date and time retrival
 char time[30];
 char date[30];
+
+// REMOVE AND REPLACE WITH REAL DEAL
+struct userDataStruct testUserData = {12, 36, 0x1, 76, 99, 123456};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -153,9 +156,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_USART1_UART_Init();
   MX_USART2_UART_Init();
-  MX_RTC_Init();
   /* USER CODE BEGIN 2 */
+  ssd1306_Init();
+  ssd1306_Fill(Black);
+  ssd1306_SetCursor(0,0);
+  ssd1306_WriteString("BOOTING", Font_7x10 ,White);
+  ssd1306_UpdateScreen();
 
   /* USER CODE END 2 */
 
@@ -480,12 +489,41 @@ void start_wright_to_display_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
-	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
-	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
-	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
-    osDelay(1000);
+	  struct userDataStruct userData = testUserData;
+
+	  ssd1306_Fill(Black);
+	  ssd1306_SetCursor(0,0);
+
+	  char temp [4][19];
+	  //"     hh-mm PM     ";
+	  char *ampm = ((userData.am) ? "AM" : "PM");
+	  snprintf(temp[0], 19, "     %2i-%2i %.2s     " ,userData.hour ,userData.min ,ampm);
+	  ssd1306_WriteString(temp[0], Font_7x10 ,White);
+
+	  ssd1306_SetCursor(0,20);
+	  snprintf(temp[1], 19, "BPM: %i", userData.bpm);
+	  ssd1306_WriteString(temp[1], Font_7x10, White);
+
+	  ssd1306_SetCursor(0,30);
+	  snprintf(temp[2], 19, "BO2: %i%%", userData.bo2);
+	  ssd1306_WriteString(temp[2], Font_7x10, White);
+
+
+	  ssd1306_SetCursor(0,40);
+	  snprintf(temp[3], 19, "Steps: %i", userData.steps);
+	  ssd1306_WriteString(temp[3], Font_7x10, White);
+	  ssd1306_UpdateScreen();
+
+
+
+
+//	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
+//	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
+//
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
+//	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
+//    osDelay(1000);
   }
   /* USER CODE END start_wright_to_display_task */
 }
@@ -543,7 +581,7 @@ void start_date_and_time_task(void *argument)
   {
 	  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 	  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    osDelay(500);
+    osDelay(100);
   }
   /* USER CODE END start_date_and_time_task */
 }
