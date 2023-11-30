@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define MAX30102_I2C_ADDR 0x57
 #define MAX30102_I2C_TIMEOUT 1000

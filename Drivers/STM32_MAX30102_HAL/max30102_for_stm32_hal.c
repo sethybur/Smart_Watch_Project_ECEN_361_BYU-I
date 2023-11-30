@@ -1,11 +1,11 @@
 #include "max30102_for_stm32_hal.h"
 #include <stdio.h>
-
+/*
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
+*/
 /**
  * @brief Built-in plotting function. Called during an interrupt to print/plot the current sample.
  * @note Override this in your main.c if you do not use printf() for printing.
@@ -190,7 +190,7 @@ void max30102_interrupt_handler(max30102_t *obj)
 
     if ((reg[0] >> MAX30102_INTERRUPT_ALC_OVF) & 0x01)
     {
-        // Ambient light overflow
+        //int j = 0; // Ambient light overflow
     }
 
     if ((reg[1] >> MAX30102_INTERRUPT_DIE_TEMP_RDY) & 0x01)
@@ -245,7 +245,7 @@ void max30102_set_sampling_rate(max30102_t *obj, max30102_sr_t sr)
 {
     uint8_t config;
     max30102_read(obj, MAX30102_SPO2_CONFIG, &config, 1);
-    config = (config & 0x63) << MAX30102_SPO2_SR;
+    config = (config & 0x63) | (sr << MAX30102_SPO2_SR);
     max30102_write(obj, MAX30102_SPO2_CONFIG, &config, 1);
 }
 
@@ -379,6 +379,8 @@ void max30102_read_fifo(max30102_t *obj)
         num_samples += 32;
     }
 
+
+
     // Second transaction: Read NUM_SAMPLES_TO_READ samples from the FIFO
     for (int8_t i = 0; i < num_samples; i++)
     {
@@ -386,10 +388,16 @@ void max30102_read_fifo(max30102_t *obj)
         max30102_read(obj, MAX30102_FIFO_DATA, sample, 6);
         uint32_t ir_sample = ((uint32_t)(sample[0] << 16) | (uint32_t)(sample[1] << 8) | (uint32_t)(sample[2])) & 0x3ffff;
         uint32_t red_sample = ((uint32_t)(sample[3] << 16) | (uint32_t)(sample[4] << 8) | (uint32_t)(sample[5])) & 0x3ffff;
+        //possible resolution mix up when scaling to higher resolutions
+
         obj->_ir_samples[i] = ir_sample;
         obj->_red_samples[i] = red_sample;
-        max30102_plot(ir_sample, red_sample);
+
     }
+
+    max30102_calculate_sample_data(num_samples);
+
+
 }
 
 /**
