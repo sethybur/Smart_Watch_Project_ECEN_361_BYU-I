@@ -366,7 +366,7 @@ static void MX_RTC_Init(void)
 
   /** Initialize RTC and set the Time and Date
   */
-  sTime.Hours = 0x3;
+  sTime.Hours = 0x18;
   sTime.Minutes = 0x0;
   sTime.Seconds = 0x0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
@@ -615,7 +615,7 @@ void start_date_and_time_task(void *argument)
 	  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 	  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	  if(sTime.Hours < 12){
-		  userData.am = 0;
+		  userData.am = 1;
 		  if(sTime.Hours == 0){
 			  userData.hour = 12;
 		  } else {
@@ -623,17 +623,11 @@ void start_date_and_time_task(void *argument)
 		  }
 
 	  } else {
-		  userData.am = 1;
+		  userData.am = 0;
 		  userData.hour = sTime.Hours - 12;
 	  }
 
 	  userData.min = sTime.Minutes;
-	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
-	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
-
-	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
-	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
-    osDelay(100);
 
 
   }
