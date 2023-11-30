@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ssd1306.h"
+#include "max30102_for_stm32_hal.h"
+#include "spo2_algorithm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,14 +33,21 @@
 	RTC_TimeTypeDef sTime;
 	RTC_DateTypeDef sDate;
 
-	struct userDataStruct {
+	typedef struct userData_t {
 		int hour;
 		int min;
-		char am;
+		unsigned char am;
 		int bpm;
-		int bo2;
+		int spO2;
 		int steps;
-	};
+	} userData_t;
+
+	typedef struct heartData_t {
+		uint32_t * irBuffer;
+		uint32_t * redBuffer;
+		int bufferCounter;
+	} heartData_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -99,8 +108,12 @@ const osThreadAttr_t date_and_time_t_attributes = {
 char time[30];
 char date[30];
 
-// REMOVE AND REPLACE WITH REAL DEAL
-struct userDataStruct userData = {12, 36, 0x1, 76, 99, 123456};
+struct userData_t userData = {12, 36, 0x1, 0, 00, 0};
+
+uint32_t irBuffer[BUFFER_SIZE];
+uint32_t redBuffer[BUFFER_SIZE];
+struct heartData_t userHeartData = {irBuffer, redBuffer, 0};
+max30102_t max30102;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,6 +129,9 @@ void start_read_acceloromater_task(void *argument);
 void start_date_and_time_task(void *argument);
 
 /* USER CODE BEGIN PFP */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void setupMax30102(max30102_t *max30102);
+void max30102_calculate_sample_data(int8_t num_samples);
 /*************  Task-Creation-Part-A ******************/
 
 /* USER CODE END PFP */
@@ -162,6 +178,8 @@ int main(void)
   ssd1306_SetCursor(0,0);
   ssd1306_WriteString("BOOTING", Font_7x10 ,White);
   ssd1306_UpdateScreen();
+
+  setupMax30102(&max30102);
 
   /* USER CODE END 2 */
 
@@ -477,11 +495,11 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
+  /*Configure GPIO pins : B1_Pin heartRateInterrupt_Pin */
+  GPIO_InitStruct.Pin = B1_Pin|heartRateInterrupt_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
@@ -495,6 +513,94 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void setupMax30102 (max30102_t *max30102)
+{
+	max30102_init(max30102, &hi2c1);
+	max30102_reset(max30102);
+	max30102_clear_fifo(max30102);
+	// FIFO configurations
+	max30102_set_fifo_config(max30102, max30102_smp_ave_2, 1, 17);
+	max30102_set_mode(max30102, max30102_spo2);
+	// LED configurations
+	max30102_set_led_pulse_width(max30102, max30102_pw_16_bit);
+	max30102_set_adc_resolution(max30102, max30102_adc_4096);
+	max30102_set_sampling_rate(max30102, max30102_sr_800);
+	max30102_set_led_current_1(max30102, 10);
+	max30102_set_led_current_2(max30102, 10);
+
+	//max30102_set_multi_led_slot_1_2(max30102, max30102_led_red, max30102_led_off);
+	//max30102_set_multi_led_slot_3_4(max30102, max30102_led_ir, max30102_led_off);
+
+	// Enter SpO2 mode
+	//max30102_set_mode(max30102, max30102_spo2);
+
+	// Enable FIFO_A_FULL interrupt
+	max30102_set_a_full(max30102, 1);
+	// Enable die temperature measurement
+	max30102_set_die_temp_en(max30102, 1);
+	// Enable DIE_TEMP_RDY interrupt
+	max30102_set_die_temp_rdy(max30102, 1);
+	//max30102_set_ppg_rdy(max30102, 1);
+	//max30102_set_alc_ovf(max30102, 1);
+}
+
+//function based on contents here:
+//https://www.instructables.com/Guide-to-Using-MAX30102-Heart-Rate-and-Oxygen-Sens/
+void max30102_calculate_sample_data(int8_t num_samples)
+{
+	/*
+	uint8_t MSG[35] = {'\0'};
+	sprintf(MSG, "  invalid bpm! %i", (unsigned int)bpm);
+	HAL_UART_Transmit(&huart2, MSG, sizeof(MSG),HAL_MAX_DELAY);
+	*/
+	int8_t msg[35] = {'\0'};
+
+	for(int i = 0; i < num_samples; i++)
+	{
+//		sprintf(msg, "%i : %i ", (int)max30102._ir_samples[i],(int)max30102._red_samples[i]);
+//		HAL_UART_Transmit(&huart2, msg, sizeof(msg),HAL_MAX_DELAY);
+		userHeartData.irBuffer[userHeartData.bufferCounter] = max30102._ir_samples[i];
+		userHeartData.redBuffer[userHeartData.bufferCounter] = max30102._red_samples[i];
+		userHeartData.bufferCounter++;
+		if(userHeartData.bufferCounter == BUFFER_SIZE)
+		{
+			memset(msg, 0, sizeof msg);
+			int32_t spo2;
+			int8_t spo2V;
+			int32_t bpm;
+			int8_t bpmV;
+			maxim_heart_rate_and_oxygen_saturation(userHeartData.irBuffer, userHeartData.redBuffer, MAX30102_BUFFER_LENGTH-MAX30102_SAMPLING_RATE,
+					0, &spo2, &spo2V, &bpm, &bpmV);
+	        if(spo2V)
+	        {
+	        	userData.spO2 = spo2;
+	        }
+	        else{
+	        }
+
+	        if(bpmV)
+	        {
+
+	        	userData.bpm = bpm;
+	        }
+	        else{
+	        }
+	        userHeartData.bufferCounter = 0;
+	        updateScreenTask((void*) &userData);
+		}
+
+		memset(msg, 0, sizeof msg);
+	}
+}
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	if(GPIO_Pin == heartRateInterrupt_Pin)
+	{
+		max30102_interrupt_handler(&max30102);
+
+	}
+}
 /************  Task-Creation-Part-B *****************/
 
 
@@ -513,7 +619,7 @@ void start_default_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(100);
+    osDelay(1000);
   }
   /* USER CODE END 5 */
 }
@@ -546,7 +652,7 @@ void start_wright_to_display_task(void *argument)
 	  ssd1306_WriteString(temp[1], Font_7x10, White);
 
 	  ssd1306_SetCursor(0,30);
-	  snprintf(temp[2], 19, "BO2: %i%%", userData.bo2);
+	  snprintf(temp[2], 19, "BO2: %i%%", userData.spO2);
 	  ssd1306_WriteString(temp[2], Font_7x10, White);
 
 
