@@ -1,4 +1,0 @@
-../Drivers/STM32_MAX30102_HAL/heartRate.c:81:6:checkForBeat	6
-../Drivers/STM32_MAX30102_HAL/heartRate.c:139:9:averageDCEstimator	1
-../Drivers/STM32_MAX30102_HAL/heartRate.c:146:9:lowPassFIRFilter	2
-../Drivers/STM32_MAX30102_HAL/heartRate.c:164:9:mul16	1
