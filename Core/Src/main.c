@@ -100,7 +100,7 @@ char time[30];
 char date[30];
 
 // REMOVE AND REPLACE WITH REAL DEAL
-struct userDataStruct testUserData = {12, 36, 0x1, 76, 99, 123456};
+struct userDataStruct userData = {12, 36, 0x1, 76, 99, 123456};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -532,15 +532,13 @@ void start_wright_to_display_task(void *argument)
   for(;;)
   {
 
-	  struct userDataStruct userData = testUserData;
-
 	  ssd1306_Fill(Black);
 	  ssd1306_SetCursor(0,0);
 
 	  char temp [4][19];
 	  //"     hh-mm PM     ";
 	  char *ampm = ((userData.am) ? "AM" : "PM");
-	  snprintf(temp[0], 19, "     %2i-%2i %.2s     " ,userData.hour ,userData.min ,ampm);
+	  snprintf(temp[0], 19, "     %02i-%02i %.2s     " ,userData.hour ,userData.min ,ampm);
 	  ssd1306_WriteString(temp[0], Font_7x10 ,White);
 
 	  ssd1306_SetCursor(0,20);
@@ -557,15 +555,8 @@ void start_wright_to_display_task(void *argument)
 	  ssd1306_WriteString(temp[3], Font_7x10, White);
 	  ssd1306_UpdateScreen();
 
+	  osDelay(1000);
 
-
-
-//	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
-//	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
-//
-//	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
-//	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
-//    osDelay(1000);
   }
   /* USER CODE END start_wright_to_display_task */
 }
@@ -623,7 +614,28 @@ void start_date_and_time_task(void *argument)
   {
 	  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 	  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	  if(sTime.Hours < 12){
+		  userData.am = 0;
+		  if(sTime.Hours == 0){
+			  userData.hour = 12;
+		  } else {
+			  userData.hour = sTime.Hours;
+		  }
+
+	  } else {
+		  userData.am = 1;
+		  userData.hour = sTime.Hours - 12;
+	  }
+
+	  userData.min = sTime.Minutes;
+	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
+	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
+
+	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
+	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
     osDelay(100);
+
+
   }
   /* USER CODE END start_date_and_time_task */
 }

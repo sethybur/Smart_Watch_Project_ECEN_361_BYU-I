@@ -6,8 +6,8 @@
 ../Core/Src/main.c:465:13:MX_GPIO_Init	1
 ../Core/Src/main.c:510:6:start_default_task	1
 ../Core/Src/main.c:528:6:start_wright_to_display_task	2
-../Core/Src/main.c:580:6:start_read_heart_rate_task	1
-../Core/Src/main.c:598:6:start_read_acceloromater_task	1
-../Core/Src/main.c:618:6:start_date_and_time_task	1
-../Core/Src/main.c:639:6:HAL_TIM_PeriodElapsedCallback	2
-../Core/Src/main.c:656:6:Error_Handler	1
+../Core/Src/main.c:571:6:start_read_heart_rate_task	1
+../Core/Src/main.c:589:6:start_read_acceloromater_task	1
+../Core/Src/main.c:609:6:start_date_and_time_task	3
+../Core/Src/main.c:651:6:HAL_TIM_PeriodElapsedCallback	2
+../Core/Src/main.c:668:6:Error_Handler	1
