@@ -1,0 +1,6 @@
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.c:20:6:maxim_heart_rate_and_oxygen_saturation	39
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.c:225:6:maxim_find_peaks	1
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.c:239:6:maxim_peaks_above_min_height	8
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.c:270:6:maxim_remove_close_peaks	6
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.c:299:6:maxim_sort_ascend	4
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.c:317:6:maxim_sort_indices_descend	4
