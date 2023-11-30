@@ -22,19 +22,28 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "ssd1306.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 	RTC_TimeTypeDef sTime;
 	RTC_DateTypeDef sDate;
+
+	struct userDataStruct {
+		int hour;
+		int min;
+		char am;
+		int bpm;
+		int bo2;
+		int steps;
+	};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-	char time[30];
-	char date[30];
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,6 +52,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 RTC_HandleTypeDef hrtc;
 
 UART_HandleTypeDef huart2;
@@ -84,6 +95,12 @@ const osThreadAttr_t date_and_time_t_attributes = {
 };
 /* USER CODE BEGIN PV */
 
+//char[] for date and time retrival
+char time[30];
+char date[30];
+
+// REMOVE AND REPLACE WITH REAL DEAL
+struct userDataStruct userData = {12, 36, 0x1, 76, 99, 123456};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,6 +108,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_RTC_Init(void);
+static void MX_I2C1_Init(void);
 void start_default_task(void *argument);
 void start_wright_to_display_task(void *argument);
 void start_read_heart_rate_task(void *argument);
@@ -137,7 +155,13 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_RTC_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+  ssd1306_Init();
+  ssd1306_Fill(Black);
+  ssd1306_SetCursor(0,0);
+  ssd1306_WriteString("BOOTING", Font_7x10 ,White);
+  ssd1306_UpdateScreen();
 
   /* USER CODE END 2 */
 
@@ -254,6 +278,54 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x10909CEC;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Analogue filter
+  */
+  if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Configure Digital filter
+  */
+  if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
+}
+
+/**
   * @brief RTC Initialization Function
   * @param None
   * @retval None
@@ -267,6 +339,7 @@ static void MX_RTC_Init(void)
 
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
 
   /* USER CODE BEGIN RTC_Init 1 */
 
@@ -293,7 +366,7 @@ static void MX_RTC_Init(void)
 
   /** Initialize RTC and set the Time and Date
   */
-  sTime.Hours = 0x0;
+  sTime.Hours = 0x3;
   sTime.Minutes = 0x0;
   sTime.Seconds = 0x0;
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
@@ -302,12 +375,30 @@ static void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 0x1;
+  sDate.WeekDay = RTC_WEEKDAY_WEDNESDAY;
+  sDate.Month = RTC_MONTH_DECEMBER;
+  sDate.Date = 0x11;
   sDate.Year = 0x0;
 
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Enable the Alarm A
+  */
+  sAlarm.AlarmTime.Hours = 0x3;
+  sAlarm.AlarmTime.Minutes = 0x3;
+  sAlarm.AlarmTime.Seconds = 0x0;
+  sAlarm.AlarmTime.SubSeconds = 0x0;
+  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 0x1;
+  sAlarm.Alarm = RTC_ALARM_A;
+  if (HAL_RTC_SetAlarm_IT(&hrtc, &sAlarm, RTC_FORMAT_BCD) != HAL_OK)
   {
     Error_Handler();
   }
@@ -422,7 +513,7 @@ void start_default_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(100000);
+    osDelay(100);
   }
   /* USER CODE END 5 */
 }
@@ -440,12 +531,32 @@ void start_wright_to_display_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
-	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
 
-	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
-	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
-    osDelay(1000);
+	  ssd1306_Fill(Black);
+	  ssd1306_SetCursor(0,0);
+
+	  char temp [4][19];
+	  //"     hh-mm PM     ";
+	  char *ampm = ((userData.am) ? "AM" : "PM");
+	  snprintf(temp[0], 19, "     %02i-%02i %.2s     " ,userData.hour ,userData.min ,ampm);
+	  ssd1306_WriteString(temp[0], Font_7x10 ,White);
+
+	  ssd1306_SetCursor(0,20);
+	  snprintf(temp[1], 19, "BPM: %i", userData.bpm);
+	  ssd1306_WriteString(temp[1], Font_7x10, White);
+
+	  ssd1306_SetCursor(0,30);
+	  snprintf(temp[2], 19, "BO2: %i%%", userData.bo2);
+	  ssd1306_WriteString(temp[2], Font_7x10, White);
+
+
+	  ssd1306_SetCursor(0,40);
+	  snprintf(temp[3], 19, "Steps: %i", userData.steps);
+	  ssd1306_WriteString(temp[3], Font_7x10, White);
+	  ssd1306_UpdateScreen();
+
+	  osDelay(1000);
+
   }
   /* USER CODE END start_wright_to_display_task */
 }
@@ -503,7 +614,28 @@ void start_date_and_time_task(void *argument)
   {
 	  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 	  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    osDelay(500);
+	  if(sTime.Hours < 12){
+		  userData.am = 0;
+		  if(sTime.Hours == 0){
+			  userData.hour = 12;
+		  } else {
+			  userData.hour = sTime.Hours;
+		  }
+
+	  } else {
+		  userData.am = 1;
+		  userData.hour = sTime.Hours - 12;
+	  }
+
+	  userData.min = sTime.Minutes;
+	  sprintf(date, "Date: %02d.%02d.%02d.\t", sDate.Date, sDate.Month, sDate.Year);
+	  sprintf(time, "Date: %02d.%02d.%02d.\r\n", sTime.Hours, sTime.Minutes, sTime.Seconds);
+
+	  HAL_UART_Transmit(&huart2, (uint8_t *)date, sizeof(date), 300);
+	  HAL_UART_Transmit(&huart2, (uint8_t *)time, sizeof(time), 300);
+    osDelay(100);
+
+
   }
   /* USER CODE END start_date_and_time_task */
 }
