@@ -31,7 +31,10 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "ssd1306.h"
+#include "max30102_for_stm32_hal.h"
+#include "spo2_algorithm.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -53,7 +56,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+void max30102_calculate_sample_data(int8_t num_samples);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -61,6 +64,7 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define heartRateInterrupt_Pin GPIO_PIN_0
 #define heartRateInterrupt_GPIO_Port GPIOC
+#define heartRateInterrupt_EXTI_IRQn EXTI0_IRQn
 #define USART_TX_Pin GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3

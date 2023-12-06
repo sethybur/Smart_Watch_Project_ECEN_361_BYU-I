@@ -1,5 +1,6 @@
 #include "max30102_for_stm32_hal.h"
 #include <stdio.h>
+#include "main.h"
 /*
 #ifdef __cplusplus
 extern "C"
@@ -179,22 +180,26 @@ void max30102_interrupt_handler(max30102_t *obj)
 
     if ((reg[0] >> MAX30102_INTERRUPT_A_FULL) & 0x01)
     {
+
         // FIFO almost full
         max30102_read_fifo(obj);
     }
 
     if ((reg[0] >> MAX30102_INTERRUPT_PPG_RDY) & 0x01)
     {
+    	//assert(0);
         // New FIFO data ready
     }
 
     if ((reg[0] >> MAX30102_INTERRUPT_ALC_OVF) & 0x01)
     {
+    	//assert(0);
         //int j = 0; // Ambient light overflow
     }
 
     if ((reg[1] >> MAX30102_INTERRUPT_DIE_TEMP_RDY) & 0x01)
     {
+    	//assert(0);
         // Temperature data ready
         int8_t temp_int;
         uint8_t temp_frac;
@@ -399,6 +404,9 @@ void max30102_read_fifo(max30102_t *obj)
 
 
 }
+
+
+
 
 /**
  * @brief Read die temperature.

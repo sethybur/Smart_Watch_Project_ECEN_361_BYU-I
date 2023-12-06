@@ -66,8 +66,8 @@ all: main-build
 main-build: Smart_Watch.elf secondary-outputs
 
 # Tool invocations
-Smart_Watch.elf Smart_Watch.map: $(OBJS) $(USER_OBJS) C:\Users\sethb\OneDrive\Documents\Workspaces\STM\Smart_Watch\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Smart_Watch.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\sethb\OneDrive\Documents\Workspaces\STM\Smart_Watch\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Smart_Watch.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Smart_Watch.elf Smart_Watch.map: $(OBJS) $(USER_OBJS) C:\Users\Everett\Documents\GitHub\Smart_Watch_Project_ECEN_361_BYU-I\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Smart_Watch.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Everett\Documents\GitHub\Smart_Watch_Project_ECEN_361_BYU-I\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Smart_Watch.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
