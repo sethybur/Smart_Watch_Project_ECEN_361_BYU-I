@@ -31,6 +31,11 @@ Core/Src/stm32l4xx_it.o: ../Core/Src/stm32l4xx_it.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
+ C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306.h \
+ C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306_conf.h \
+ C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306_fonts.h \
+ ../Drivers/STM32_MAX30102_HAL/max30102_for_stm32_hal.h \
+ ../Drivers/STM32_MAX30102_HAL/spo2_algorithm.h \
  ../Core/Inc/stm32l4xx_it.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
@@ -65,4 +70,9 @@ Core/Src/stm32l4xx_it.o: ../Core/Src/stm32l4xx_it.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
+C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306.h:
+C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306_conf.h:
+C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306_fonts.h:
+../Drivers/STM32_MAX30102_HAL/max30102_for_stm32_hal.h:
+../Drivers/STM32_MAX30102_HAL/spo2_algorithm.h:
 ../Core/Inc/stm32l4xx_it.h:

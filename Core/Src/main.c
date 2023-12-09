@@ -22,9 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ssd1306.h"
-#include "max30102_for_stm32_hal.h"
-#include "spo2_algorithm.h"
+#include "semphr.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,7 +31,7 @@
 	RTC_TimeTypeDef sTime;
 	RTC_DateTypeDef sDate;
 
-	typedef struct userData_t {
+typedef struct userData_t {
 		int hour;
 		int min;
 		unsigned char am;
@@ -42,7 +40,7 @@
 		int steps;
 	} userData_t;
 
-	typedef struct heartData_t {
+typedef struct heartData_t {
 		uint32_t * irBuffer;
 		uint32_t * redBuffer;
 		int bufferCounter;
@@ -93,14 +91,19 @@ osThreadId_t read_acceloromaHandle;
 const osThreadAttr_t read_acceloroma_attributes = {
   .name = "read_acceloroma",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for date_and_time_t */
 osThreadId_t date_and_time_tHandle;
 const osThreadAttr_t date_and_time_t_attributes = {
   .name = "date_and_time_t",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityBelowNormal7,
+};
+/* Definitions for i2CMutex */
+osMutexId_t i2CMutexHandle;
+const osMutexAttr_t i2CMutex_attributes = {
+  .name = "i2CMutex"
 };
 /* USER CODE BEGIN PV */
 
@@ -114,6 +117,9 @@ uint32_t irBuffer[BUFFER_SIZE];
 uint32_t redBuffer[BUFFER_SIZE];
 struct heartData_t userHeartData = {irBuffer, redBuffer, 0};
 max30102_t max30102;
+
+//xSemaphoreHandle i2CMutex;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -173,21 +179,32 @@ int main(void)
   MX_RTC_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+
+
+
+
   ssd1306_Init();
   ssd1306_Fill(Black);
   ssd1306_SetCursor(0,0);
   ssd1306_WriteString("BOOTING", Font_7x10 ,White);
   ssd1306_UpdateScreen();
 
-  setupMax30102(&max30102);
 
+
+
+  setupMax30102(&max30102);
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of i2CMutex */
+  i2CMutexHandle = osMutexNew(&i2CMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
+
   /* add mutexes, ... */
+
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -514,6 +531,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 15, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -521,11 +542,13 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void setupMax30102 (max30102_t *max30102)
 {
+
+
 	max30102_init(max30102, &hi2c1);
 	max30102_reset(max30102);
 	max30102_clear_fifo(max30102);
 	// FIFO configurations
-	max30102_set_fifo_config(max30102, max30102_smp_ave_2, 1, 17);
+	max30102_set_fifo_config(max30102, max30102_smp_ave_2, 1, 16);
 	max30102_set_mode(max30102, max30102_spo2);
 	// LED configurations
 	max30102_set_led_pulse_width(max30102, max30102_pw_16_bit);
@@ -537,9 +560,6 @@ void setupMax30102 (max30102_t *max30102)
 	//max30102_set_multi_led_slot_1_2(max30102, max30102_led_red, max30102_led_off);
 	//max30102_set_multi_led_slot_3_4(max30102, max30102_led_ir, max30102_led_off);
 
-	// Enter SpO2 mode
-	//max30102_set_mode(max30102, max30102_spo2);
-
 	// Enable FIFO_A_FULL interrupt
 	max30102_set_a_full(max30102, 1);
 	// Enable die temperature measurement
@@ -548,10 +568,10 @@ void setupMax30102 (max30102_t *max30102)
 	max30102_set_die_temp_rdy(max30102, 1);
 	//max30102_set_ppg_rdy(max30102, 1);
 	//max30102_set_alc_ovf(max30102, 1);
+
+
 }
 
-//function based on contents here:
-//https://www.instructables.com/Guide-to-Using-MAX30102-Heart-Rate-and-Oxygen-Sens/
 void max30102_calculate_sample_data(int8_t num_samples)
 {
 	/*
@@ -582,6 +602,7 @@ void max30102_calculate_sample_data(int8_t num_samples)
 	        	userData.spO2 = spo2;
 	        }
 	        else{
+	        	userData.spO2 = 69;
 	        }
 
 	        if(bpmV)
@@ -590,9 +611,9 @@ void max30102_calculate_sample_data(int8_t num_samples)
 	        	userData.bpm = bpm;
 	        }
 	        else{
+	        	userData.bpm = 69;
 	        }
 	        userHeartData.bufferCounter = 0;
-	        updateScreenTask((void*) &userData);
 		}
 
 		memset(msg, 0, sizeof msg);
@@ -603,10 +624,54 @@ void max30102_calculate_sample_data(int8_t num_samples)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 	if(GPIO_Pin == heartRateInterrupt_Pin)
 	{
-		max30102_interrupt_handler(&max30102);
-
+		//max30102_interrupt_handler(&max30102);
+		//max30102_on_interrupt(&max30102);
 	}
 }
+
+// attempting fix from:
+// https://forums.freertos.org/t/difference-between-hal-tick-and-freertos-tick/17821/5
+
+/*HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
+{
+	( void ) TickPriority;
+	( void ) SysTick_Config( SystemCoreClock / 1000 );
+	return HAL_OK;
+}*/
+
+/*
+void HAL_Delay( uint32_t ulDelayMs )
+{
+    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
+    {
+        vTaskDelay( pdMS_TO_TICKS( ulDelayMs ) );
+    }
+    else
+    {
+        uint32_t ulStartTick = HAL_GetTick();
+        uint32_t ulTicksWaited = ulDelayMs;
+
+         Add a freq to guarantee minimum wait
+        if( ulTicksWaited < HAL_MAX_DELAY )
+        {
+            ulTicksWaited += ( uint32_t ) ( HAL_GetTickFreq() );
+        }
+
+        while( ( HAL_GetTick() - ulStartTick ) < ulTicksWaited )
+        {
+            __NOP();
+        }
+    }
+}
+*/
+
+/*uint32_t HAL_GetTick(void){
+
+}
+*/
+
+
+
 /************  Task-Creation-Part-B *****************/
 
 
@@ -643,29 +708,34 @@ void start_wright_to_display_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	  if(xSemaphoreTake(i2CMutexHandle, portMAX_DELAY) == pdTRUE)
+	  {
 
-	  ssd1306_Fill(Black);
-	  ssd1306_SetCursor(0,0);
+		  ssd1306_Fill(Black);
+		  ssd1306_SetCursor(0,0);
 
-	  char temp [4][19];
-	  //"     hh-mm PM     ";
-	  char *ampm = ((userData.am) ? "AM" : "PM");
-	  snprintf(temp[0], 19, "     %02i-%02i %.2s     " ,userData.hour ,userData.min ,ampm);
-	  ssd1306_WriteString(temp[0], Font_7x10 ,White);
+		  char temp [4][19];
+		  //"     hh-mm PM     ";
+		  char *ampm = ((userData.am) ? "AM" : "PM");
+		  snprintf(temp[0], 19, "     %02i-%02i %.2s     " ,userData.hour ,userData.min ,ampm);
+		  ssd1306_WriteString(temp[0], Font_7x10 ,White);
 
-	  ssd1306_SetCursor(0,20);
-	  snprintf(temp[1], 19, "BPM: %i", userData.bpm);
-	  ssd1306_WriteString(temp[1], Font_7x10, White);
+		  ssd1306_SetCursor(0,20);
+		  snprintf(temp[1], 19, "BPM: %i", userData.bpm);
+		  ssd1306_WriteString(temp[1], Font_7x10, White);
 
-	  ssd1306_SetCursor(0,30);
-	  snprintf(temp[2], 19, "BO2: %i%%", userData.spO2);
-	  ssd1306_WriteString(temp[2], Font_7x10, White);
+		  ssd1306_SetCursor(0,30);
+		  snprintf(temp[2], 19, "BO2: %i%%", userData.spO2);
+		  ssd1306_WriteString(temp[2], Font_7x10, White);
 
 
-	  ssd1306_SetCursor(0,40);
-	  snprintf(temp[3], 19, "Steps: %i", userData.steps);
-	  ssd1306_WriteString(temp[3], Font_7x10, White);
-	  ssd1306_UpdateScreen();
+		  ssd1306_SetCursor(0,40);
+		  snprintf(temp[3], 19, "Steps: %i", userData.steps);
+		  ssd1306_WriteString(temp[3], Font_7x10, White);
+		  ssd1306_UpdateScreen();
+
+	  xSemaphoreGive(i2CMutexHandle);
+	  }
 
 	  osDelay(1000);
 
@@ -686,7 +756,32 @@ void start_read_heart_rate_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(100000);
+
+	//if(max30102_has_interrupt(&max30102))
+	//{
+		//taskENTER_CRITICAL();
+
+		if(xSemaphoreTake(i2CMutexHandle, portMAX_DELAY) == pdTRUE)
+		{
+			uint8_t reg[2] = {0x00};
+			    // Interrupt flag in registers 0x00 and 0x01 are cleared on read
+			    max30102_read(&max30102, MAX30102_INTERRUPT_STATUS_1, reg, 2);
+
+			    if (!(reg[0] >> MAX30102_INTERRUPT_A_FULL) & 0x01)
+			    {
+
+			        // FIFO almost full
+			        max30102_read_fifo(&max30102);
+			    }
+			//max30102_interrupt_handler(&max30102);
+			xSemaphoreGive(i2CMutexHandle);
+		}
+
+
+
+		//taskEXIT_CRITICAL();
+	//}
+    osDelay(1000);
   }
   /* USER CODE END start_read_heart_rate_task */
 }
@@ -706,7 +801,7 @@ void start_read_acceloromater_task(void *argument)
   {
 
 
-    osDelay(10000);
+    osDelay(1000);
   }
   /* USER CODE END start_read_acceloromater_task */
 }
@@ -724,23 +819,28 @@ void start_date_and_time_task(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-	  HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-	  if(sTime.Hours < 12){
-		  userData.am = 1;
-		  if(sTime.Hours == 0){
-			  userData.hour = 12;
-		  } else {
-			  userData.hour = sTime.Hours;
-		  }
+	  if(xSemaphoreTake(i2CMutexHandle, portMAX_DELAY) == pdTRUE)
+	  {
+		 HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+		 HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+		 if(sTime.Hours < 12){
+			 userData.am = 1;
+			 if(sTime.Hours == 0){
+				 userData.hour = 12;
+			 } else {
+				 userData.hour = sTime.Hours;
+			 }
 
-	  } else {
-		  userData.am = 0;
-		  userData.hour = sTime.Hours - 12;
+		 } else {
+		 	userData.am = 0;
+		 	userData.hour = sTime.Hours - 12;
+		 }
+
+		 	  userData.min = sTime.Minutes;
+		 	  xSemaphoreGive(i2CMutexHandle);
 	  }
 
-	  userData.min = sTime.Minutes;
-
+	  osDelay(1000);
 
   }
   /* USER CODE END start_date_and_time_task */
