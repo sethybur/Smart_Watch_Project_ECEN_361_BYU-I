@@ -7,6 +7,7 @@
 "./Core/Src/sysmem.o"
 "./Core/Src/system_stm32l4xx.o"
 "./Core/Startup/startup_stm32l476rgtx.o"
+"./Drivers/ADXL345_Driver/stm32_ADXL345_Driver.o"
 "./Drivers/OLED/ssd1306.o"
 "./Drivers/OLED/ssd1306_fonts.o"
 "./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.o"

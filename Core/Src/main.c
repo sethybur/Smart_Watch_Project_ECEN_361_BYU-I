@@ -31,14 +31,23 @@
 	RTC_TimeTypeDef sTime;
 	RTC_DateTypeDef sDate;
 
-typedef struct userData_t {
-		int hour;
-		int min;
-		unsigned char am;
-		int bpm;
-		int spO2;
-		int steps;
-	} userData_t;
+//typedef struct userData_t {
+//		uint8_t hour;
+//		uint8_t min;
+//		unsigned char am;
+//		uint32_t bpm;
+//		uint8_t spO2;
+//		uint32_t steps;
+//	} userData_t;
+
+	typedef struct userData_t {
+			int hour;
+			int min;
+			unsigned char am;
+			int bpm;
+			int spO2;
+			int steps;
+		} userData_t;
 
 typedef struct heartData_t {
 		uint32_t * irBuffer;
@@ -69,35 +78,35 @@ UART_HandleTypeDef huart2;
 osThreadId_t default_taskHandle;
 const osThreadAttr_t default_task_attributes = {
   .name = "default_task",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for wright_to_displ */
 osThreadId_t wright_to_displHandle;
 const osThreadAttr_t wright_to_displ_attributes = {
   .name = "wright_to_displ",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for read_heart_rate */
 osThreadId_t read_heart_rateHandle;
 const osThreadAttr_t read_heart_rate_attributes = {
   .name = "read_heart_rate",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for read_acceloroma */
 osThreadId_t read_acceloromaHandle;
 const osThreadAttr_t read_acceloroma_attributes = {
   .name = "read_acceloroma",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
 };
 /* Definitions for date_and_time_t */
 osThreadId_t date_and_time_tHandle;
 const osThreadAttr_t date_and_time_t_attributes = {
   .name = "date_and_time_t",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal7,
 };
 /* Definitions for i2CMutex */
@@ -112,6 +121,8 @@ char time[30];
 char date[30];
 
 struct userData_t userData = {12, 36, 0x1, 0, 00, 0};
+
+struct ADXL_Data_t pedometerData= {0,0,0};
 
 uint32_t irBuffer[BUFFER_SIZE];
 uint32_t redBuffer[BUFFER_SIZE];
@@ -189,7 +200,7 @@ int main(void)
   ssd1306_WriteString("BOOTING", Font_7x10 ,White);
   ssd1306_UpdateScreen();
 
-
+  adxl_init (&hi2c1);
 
 
   setupMax30102(&max30102);
@@ -531,10 +542,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 15, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -548,12 +555,12 @@ void setupMax30102 (max30102_t *max30102)
 	max30102_reset(max30102);
 	max30102_clear_fifo(max30102);
 	// FIFO configurations
-	max30102_set_fifo_config(max30102, max30102_smp_ave_2, 1, 16);
+	max30102_set_fifo_config(max30102, max30102_smp_ave_4, 1, 16);
 	max30102_set_mode(max30102, max30102_spo2);
 	// LED configurations
 	max30102_set_led_pulse_width(max30102, max30102_pw_16_bit);
 	max30102_set_adc_resolution(max30102, max30102_adc_4096);
-	max30102_set_sampling_rate(max30102, max30102_sr_800);
+	max30102_set_sampling_rate(max30102, max30102_sr_400);
 	max30102_set_led_current_1(max30102, 10);
 	max30102_set_led_current_2(max30102, 10);
 
@@ -602,16 +609,17 @@ void max30102_calculate_sample_data(int8_t num_samples)
 	        	userData.spO2 = spo2;
 	        }
 	        else{
-	        	userData.spO2 = 69;
+	        	userData.spO2 = 0;
 	        }
 
 	        if(bpmV)
 	        {
 
 	        	userData.bpm = bpm;
+
 	        }
 	        else{
-	        	userData.bpm = 69;
+	        	userData.bpm = 0;
 	        }
 	        userHeartData.bufferCounter = 0;
 		}
@@ -628,47 +636,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 		//max30102_on_interrupt(&max30102);
 	}
 }
-
-// attempting fix from:
-// https://forums.freertos.org/t/difference-between-hal-tick-and-freertos-tick/17821/5
-
-/*HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
-{
-	( void ) TickPriority;
-	( void ) SysTick_Config( SystemCoreClock / 1000 );
-	return HAL_OK;
-}*/
-
-/*
-void HAL_Delay( uint32_t ulDelayMs )
-{
-    if( xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED )
-    {
-        vTaskDelay( pdMS_TO_TICKS( ulDelayMs ) );
-    }
-    else
-    {
-        uint32_t ulStartTick = HAL_GetTick();
-        uint32_t ulTicksWaited = ulDelayMs;
-
-         Add a freq to guarantee minimum wait
-        if( ulTicksWaited < HAL_MAX_DELAY )
-        {
-            ulTicksWaited += ( uint32_t ) ( HAL_GetTickFreq() );
-        }
-
-        while( ( HAL_GetTick() - ulStartTick ) < ulTicksWaited )
-        {
-            __NOP();
-        }
-    }
-}
-*/
-
-/*uint32_t HAL_GetTick(void){
-
-}
-*/
 
 
 
@@ -723,6 +690,7 @@ void start_wright_to_display_task(void *argument)
 		  ssd1306_SetCursor(0,20);
 		  snprintf(temp[1], 19, "BPM: %i", userData.bpm);
 		  ssd1306_WriteString(temp[1], Font_7x10, White);
+
 
 		  ssd1306_SetCursor(0,30);
 		  snprintf(temp[2], 19, "BO2: %i%%", userData.spO2);
@@ -781,7 +749,7 @@ void start_read_heart_rate_task(void *argument)
 
 		//taskEXIT_CRITICAL();
 	//}
-    osDelay(1000);
+    osDelay(50);
   }
   /* USER CODE END start_read_heart_rate_task */
 }
@@ -800,8 +768,19 @@ void start_read_acceloromater_task(void *argument)
   for(;;)
   {
 
+	  if(xSemaphoreTake(i2CMutexHandle, portMAX_DELAY) == pdTRUE)
+	  	  {
+		  	 adxl_retrive_data(&hi2c1, &pedometerData);
 
-    osDelay(1000);
+		  	 if(pedometerData.x + pedometerData.y >= 4)
+		  	 {
+		  		 userData.steps++;
+		  	 }
+
+			 xSemaphoreGive(i2CMutexHandle);
+	  	  }
+
+    osDelay(1252);
   }
   /* USER CODE END start_read_acceloromater_task */
 }
