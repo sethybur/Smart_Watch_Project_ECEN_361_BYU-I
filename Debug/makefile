@@ -16,6 +16,7 @@ RM := rm -rf
 -include Drivers/STM32_MAX30102_HAL/subdir.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Drivers/OLED/subdir.mk
+-include Drivers/ADXL345_Driver/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk

@@ -36,6 +36,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306_fonts.h \
  ../Drivers/STM32_MAX30102_HAL/max30102_for_stm32_hal.h \
  ../Drivers/STM32_MAX30102_HAL/spo2_algorithm.h \
+ C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/ADXL345_Driver/stm32_ADXL345_Driver.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Core/Inc/FreeRTOSConfig.h \
@@ -88,6 +89,7 @@ C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLE
 C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/OLED/ssd1306_fonts.h:
 ../Drivers/STM32_MAX30102_HAL/max30102_for_stm32_hal.h:
 ../Drivers/STM32_MAX30102_HAL/spo2_algorithm.h:
+C:/Users/Everett/Documents/GitHub/Smart_Watch_Project_ECEN_361_BYU-I/Drivers/ADXL345_Driver/stm32_ADXL345_Driver.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
 ../Core/Inc/FreeRTOSConfig.h:
